@@ -1,0 +1,29 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Secrets - passed through via docker-compose env_file instead
+.env
+
+# Data/index - mounted via volume at runtime, not baked into the image
+data/
+chroma_db/
+
+# Frontend is a separate deploy target, not part of the backend image
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Eval artifacts
+eval/eval_run.log
+eval/__pycache__/
+
+*.log
+.vscode/
+.idea/

@@ -1,0 +1,6 @@
+-r requirements.txt
+# Pinned exactly (not >=) since ruff's default rule set can change between
+# versions - this project relies on ruff's actual defaults rather than a
+# custom config, so an unpinned upgrade could silently start failing CI.
+ruff==0.16.3
+pytest>=8.0

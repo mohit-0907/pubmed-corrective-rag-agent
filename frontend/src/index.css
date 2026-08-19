@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Source Serif 4", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Primary: deep teal - credible/clinical without being cold. */
+  --color-brand-50: #edf5f4;
+  --color-brand-100: #d3e8e6;
+  --color-brand-200: #a8d1cc;
+  --color-brand-300: #7bb8b1;
+  --color-brand-400: #4f9f96;
+  --color-brand-500: #2d7d74;
+  --color-brand-600: #1f5f5b;
+  --color-brand-700: #184a47;
+  --color-brand-800: #123634;
+  --color-brand-900: #0c2422;
+
+  /* Accent: muted terracotta, reserved for "retry / needs attention" states. */
+  --color-accent-50: #fbf1ec;
+  --color-accent-100: #f4ddd1;
+  --color-accent-200: #e8bba4;
+  --color-accent-300: #db9977;
+  --color-accent-400: #ce7f5d;
+  --color-accent-500: #c17754;
+  --color-accent-600: #a6603f;
+  --color-accent-700: #7f4a31;
+  --color-accent-800: #583424;
+  --color-accent-900: #331e15;
+}
+
+body {
+  margin: 0;
+}
+
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide-in {
+  animation: fade-slide-in 0.35s ease-out both;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
