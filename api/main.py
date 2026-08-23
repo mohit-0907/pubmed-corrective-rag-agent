@@ -22,7 +22,7 @@ from api.streaming import stream_graph_events
 # Vite's default dev server port. This is a local portfolio project, not a
 # deployed multi-origin service, so a small fixed allowlist is enough -
 # revisit if a deployed frontend origin needs adding later.
-DEV_FRONTEND_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+DEV_FRONTEND_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173","https://pubmed-corrective-rag-agent.vercel.app/"]
 
 
 @asynccontextmanager
