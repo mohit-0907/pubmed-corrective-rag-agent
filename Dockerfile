@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY agent/ agent/
 COPY api/ api/
 COPY data_pipeline/ data_pipeline/
+COPY chroma_db/ chroma_db/
 
 RUN useradd --create-home --uid 1000 appuser && chown -R appuser:appuser /app
 USER appuser

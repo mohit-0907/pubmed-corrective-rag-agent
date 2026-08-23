@@ -3,5 +3,4 @@ __pycache__/
 *.pyc
 .env
 data/
-chroma_db/
 eval/eval_run.log
