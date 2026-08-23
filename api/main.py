@@ -19,10 +19,14 @@ from agent.graph import build_graph
 from api.schemas import QueryRequest, QueryResponse, Source
 from api.streaming import stream_graph_events
 
-# Vite's default dev server port. This is a local portfolio project, not a
-# deployed multi-origin service, so a small fixed allowlist is enough -
-# revisit if a deployed frontend origin needs adding later.
-DEV_FRONTEND_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173","https://pubmed-corrective-rag-agent.vercel.app/"]
+# Origin headers never include a trailing slash or path - only scheme+host+port -
+# so these must match exactly what the browser sends, not the URL you'd type
+# into an address bar.
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://pubmed-corrective-rag-agent.vercel.app",
+]
 
 
 @asynccontextmanager
@@ -36,7 +40,7 @@ app = FastAPI(title="Corrective RAG Agent", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=DEV_FRONTEND_ORIGINS,
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
