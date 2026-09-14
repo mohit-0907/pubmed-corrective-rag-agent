@@ -1,8 +1,6 @@
 import { ArrowUp, BadgeCheck, ListFilter, Search, Sparkles, Sprout } from 'lucide-react'
 import { useState } from 'react'
-import { renderInlineMarkdown } from '../lib/formatAnswer'
-import CitationList from './CitationList'
-import RetryBadge from './RetryBadge'
+import AnswerMessage from './AnswerMessage'
 
 const EXAMPLE_QUESTIONS = [
   'How effective is mindfulness-based stress reduction for anxiety?',
@@ -86,17 +84,7 @@ export default function ChatPanel({ messages, isStreaming, onSubmit }) {
                 </div>
               </div>
 
-              <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-stone-200 bg-white px-4 py-3 shadow-sm sm:max-w-xl">
-                  <div className="mb-2 flex items-center gap-2">
-                    <RetryBadge retriesUsed={message.retries_used} />
-                  </div>
-                  <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-stone-800">
-                    {renderInlineMarkdown(message.answer)}
-                  </p>
-                  <CitationList citations={message.citations} />
-                </div>
-              </div>
+              <AnswerMessage message={message} />
             </div>
           ))}
         </div>

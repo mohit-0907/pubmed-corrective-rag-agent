@@ -52,10 +52,9 @@ per-paper retrieval caps with concurrent grading, two-stage plain-language
 answers with numbered citations, and a three-arm eval with readability metrics.
 
 Known open items:
-1. Frontend pass - [1] markers render as plain text, not links to the source list
-2. Eval set is n=14; run-to-run variance on LLM-judged metrics is as large as
+1. Eval set is n=14; run-to-run variance on LLM-judged metrics is as large as
    the effects being measured (see README)
-3. Corpus capped at ~1,986 papers by the MeSH query; 27% full-text coverage
+2. Corpus capped at ~1,986 papers by the MeSH query; 27% full-text coverage
 
 ## Decisions log
 - Embedding model: text-embedding-3-small (1536 dims; `dimensions` is
@@ -79,6 +78,11 @@ Known open items:
 - Plain-language glosses are kept even though they lower measured
   faithfulness - deliberate product decision, documented in the README
 - Frontend: React + Vite + Tailwind, deployed on Vercel
+- Citation markers are buttons that scroll to and highlight the matching
+  source, rather than linking straight to PubMed - jumping off-site
+  mid-sentence is worse than a two-step (marker -> source entry -> PubMed).
+  A marker with no matching source stays plain text rather than becoming a
+  dead link
 
 ## Conventions
 - Type hints everywhere
