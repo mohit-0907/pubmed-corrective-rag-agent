@@ -63,25 +63,29 @@ The last two come from a single run, so a shared question, context, and draft se
 
 | Metric | Linear | Corrective (draft) | Corrective (final) |
 |---|---|---|---|
-| Faithfulness | 0.98 (n=14) | 0.99 (n=12) | 0.96 (n=12) |
-| Answer relevancy | 0.70 (n=14) | 0.78 (n=14) | 0.73 (n=14) |
-| Context precision | 0.56 (n=14) | _shared_ | **0.71** (n=12) |
-| Flesch-Kincaid grade | 17.38 | 16.05 | **12.08** |
-| Flesch reading ease | 8.74 | 16.50 | **39.32** |
+| Faithfulness | 0.98 (n=14) | 1.00 (n=12) | 0.95 (n=12) |
+| Answer relevancy | 0.71 (n=14) | 0.71 (n=14) | 0.78 (n=14) |
+| Context precision | 0.55 (n=14) | _shared_ | **0.71** (n=12) |
+| Flesch-Kincaid grade | 17.85 | 16.81 | **13.10** |
+| Flesch reading ease | 8.88 | 13.12 | **36.20** |
 | Avg. retries | — | — | 1.29 |
-| Avg. latency | — | — | 16.9s |
+| Avg. latency | — | — | 14.4s |
 
-**What holds up, and what doesn't.** Running this eval four times exposed that the metrics differ a lot in stability. Readability and context precision barely move between runs (final Flesch-Kincaid landed at 12.04, 12.16, 12.66, 12.08; context precision at 0.71, 0.73, 0.74, 0.71). Faithfulness and answer relevancy do not: the *linear* arm's relevancy — which never changed — came in at 0.82, 0.78, 0.81, and 0.70 across the same runs. That 0.12 swing is larger than most of the differences between arms.
+**What holds up, and what doesn't.** Running this eval five times exposed that the metrics differ a lot in stability. Context precision barely moves between runs (final: 0.71, 0.73, 0.74, 0.71, 0.71). Faithfulness and answer relevancy do not: the *linear* arm's relevancy — which never changed — came in at 0.82, 0.78, 0.81, 0.70, and 0.71 across those runs. That 0.12 swing is larger than most of the differences between arms.
 
 So, stated honestly:
 
-- **Readability improved substantially and reliably.** ~5 grade levels easier than plain RAG, of which the draft→final comparison attributes ~4 to the simplify step specifically. Reading ease roughly 4.5×.
-- **Context precision improved substantially and reliably** — 0.56 → 0.71, a ~27% gain. This is the metric `grade_documents` exists to move, and it moves.
+- **Readability improved substantially and reliably.** ~4.8 grade levels easier than plain RAG (17.85 → 13.10), of which the draft→final comparison attributes ~3.7 to the simplify step specifically. Reading ease roughly 4×.
+- **Context precision improved substantially and reliably** — 0.55 → 0.71, a ~29% gain. This is the metric `grade_documents` exists to move, and it moves.
 - **Faithfulness and answer relevancy are roughly comparable across all three arms.** With n=14 and this much run-to-run variance, the small differences are not evidence of anything. Reporting them as precise deltas would be overclaiming.
+
+**Prose costs a little measured readability, and is worth it.** Answers used to come back as numbered lists. Rendered in the UI that put list ordinals ("1.", "2.") directly beside the `[1]` citation markers, where they stop matching after the first couple of items — item 3 citing `[4]` — which made the citations hard to follow. Constraining generation to prose fixed that and cost ~1 grade level (final Flesch-Kincaid 12.08 → 13.10, reading ease 39.32 → 36.20): list items are short fragments, and both metrics key heavily on sentence length. All three arms shifted, since they share the `generate` node (linear +0.47, draft +0.76, final +1.02 grades), so the gain over plain RAG narrowed only slightly — 5.3 grades to 4.8.
 
 `n` is how many questions a metric could be scored on. RAGAS cannot score faithfulness or context precision against zero retrieved chunks, which the corrective graph legitimately produces when it correctly declines an off-corpus question.
 
-**A note on how RAGAS scores refusals.** Answer relevancy returns exactly 0.00 when it judges an answer noncommittal. Three questions hit this: the two off-corpus ones (where "the sources don't contain this" is the correct answer) and "What's the best way to cope with stress?" (where declining to name one universal "best" strategy is also correct). In each case the metric penalises behavior the system was deliberately built to have.
+**A note on how RAGAS scores refusals.** Answer relevancy returns exactly 0.00 when it judges an answer noncommittal — there is no partial credit, so a single hedged answer moves the mean by ~0.07. Three questions hit it in this run: the two off-corpus ones (where "the sources don't contain this" is the correct answer), and "Does a CBT-based mobile intervention help reduce nurse burnout?", which the literature genuinely answers as *yes, but the effects are modest and variable*. Faithful reporting of a weak finding reads as noncommittal to the metric.
+
+*Which* questions trip it shifts between runs — an earlier run zeroed "What's the best way to cope with stress?" instead, and scored the nurse-burnout question 0.99. So the 0.00s are better read as a property of the metric than as a ranking of the answers. In each case it penalises behavior the system was deliberately built to have.
 
 **Safety guardrail check.** On the crisis-adjacent question, the corrective graph bypassed the pipeline entirely, as designed. The linear graph has no guardrail node, so the same question went straight through retrieval and generation.
 
@@ -91,9 +95,9 @@ Full per-question breakdown: `eval/results.md`. Raw scores and answers: `eval/re
 
 The simplify step is instructed to explain technical terms on first use. In practice that produces sentences like:
 
-> "CBT is a type of therapy that helps people change negative thought patterns and behaviors."
+> "Cognitive-behavioral therapy is a type of talk therapy that helps people change negative thought patterns and behaviors."
 
-That statement is true and useful to a lay reader — and it is **not in the retrieved sources**, because papers rarely define their own field's vocabulary. The groundedness grader correctly flags it as unsupported, which measurably lowers faithfulness on questions where a gloss appears. One eval question dropped from 1.00 to 0.64 on exactly this.
+That statement is true and useful to a lay reader — and it is **not in the retrieved sources**, because papers rarely define their own field's vocabulary. The groundedness grader correctly flags it as unsupported, which measurably lowers faithfulness on questions where a gloss appears. In the published run, the two questions carrying a CBT gloss both fell from 1.00 on the draft to 0.77 on the final answer (Q6 and Q9 in `eval/results_raw.json`), and they are the only two of the fourteen that carry one.
 
 This is a deliberate product decision, not an unnoticed defect. A plain-language research tool that cannot explain "cognitive behavioral therapy" to the audience it's written for has failed at its actual job. The alternative — restricting explanations to wording present in the sources — scores better and reads worse, drifting back toward the specialist register this version exists to get away from.
 
