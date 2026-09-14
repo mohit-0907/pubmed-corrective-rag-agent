@@ -26,3 +26,7 @@ eval/__pycache__/
 *.log
 .vscode/
 .idea/
+
+# Vector index is hosted on Pinecone, never baked into the image
+chroma_db/
+chroma_db_v2/

@@ -8,11 +8,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Only what api/main.py actually needs at runtime - not eval/, frontend/,
-# or the data pipeline's raw-data output.
+# or the data pipeline's raw-data output. The vector index lives in
+# Pinecone now, so nothing about it ships in the image either.
 COPY agent/ agent/
 COPY api/ api/
 COPY data_pipeline/ data_pipeline/
-COPY chroma_db/ chroma_db/
 
 RUN useradd --create-home --uid 1000 appuser && chown -R appuser:appuser /app
 USER appuser

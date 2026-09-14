@@ -100,6 +100,17 @@ def _parse_year(article: ET.Element) -> str | None:
     return None
 
 
+def _parse_pmcid(pubmed_article: ET.Element) -> str | None:
+    """Extracts the PubMed Central ID, when the article has one.
+
+    PubMed's own XML already carries this alongside the DOI and PMID, so
+    reading it here saves a separate ID-conversion API call per paper when
+    we later go looking for full text. Only ~30% of articles have one.
+    """
+    node = pubmed_article.find("PubmedData/ArticleIdList/ArticleId[@IdType='pmc']")
+    return _text_or_none(node)
+
+
 def _parse_pubmed_article(pubmed_article: ET.Element) -> dict | None:
     """Parses a single <PubmedArticle> element into our record shape.
 
@@ -130,10 +141,15 @@ def _parse_pubmed_article(pubmed_article: ET.Element) -> dict | None:
 
     return {
         "pmid": pmid,
+        "pmcid": _parse_pmcid(pubmed_article) or "",
         "title": title or "",
         "abstract": abstract,
         "journal": journal or "",
         "year": year or "",
+        # PubMed indexes non-English articles with a translated (bracketed)
+        # title and an English abstract, but PMC serves their full text in the
+        # original language - so this gates whether we go looking for it.
+        "language": _text_or_none(article.find("Language")) or "",
     }
 
 
