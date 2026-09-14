@@ -41,6 +41,9 @@ def _describe_node_update(node_name: str, prior_state: dict, update: dict) -> st
     if node_name == "generate":
         return "answer generated from retrieved documents"
 
+    if node_name == "simplify":
+        return "answer rewritten in plain language, citations preserved"
+
     if node_name == "check_groundedness":
         if update.get("grounded"):
             return "answer is grounded in the retrieved documents"

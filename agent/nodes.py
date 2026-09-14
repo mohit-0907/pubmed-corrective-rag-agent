@@ -57,6 +57,11 @@ Where the sources give concrete detail - sample sizes, effect sizes, how long \
 an intervention ran, who it was tested on - include it. That specificity is \
 what makes the answer useful.
 
+Write flowing paragraphs, not a numbered or bulleted list. A downstream \
+step rewrites this for a general reader, and list ordinals ("1.", "2.") \
+end up sitting beside the [1] citation markers without matching them, \
+which makes the citations hard to follow.
+
 If the sources don't contain enough information to answer, say so plainly \
 instead of guessing.
 
@@ -81,7 +86,10 @@ renumber, drop, or invent them.
 reads better than "73.2%". Never change what a number says.
 - Add nothing. Every fact must already be in the summary. If the summary says \
 evidence is limited, the rewrite says so too.
-- Short paragraphs. No headings, no bullet lists, no preamble like "Here is a \
+- Short paragraphs of prose. No headings, no bullet points, and no \
+numbered lists: list ordinals ("1.", "2.") sit right beside the [1] \
+citation markers and stop matching them after the first couple of items, \
+which makes the citations much harder to follow. No preamble like "Here is a \
 simplified version".
 - Stay descriptive, never prescriptive. Report what studies found; do not tell \
 the reader what to do or imply a recommendation."""
