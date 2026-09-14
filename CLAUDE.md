@@ -6,9 +6,10 @@ is weak or generation is ungrounded, built as a portfolio project demonstrating
 LangGraph state machines with conditional loops.
 
 ## Domain
-Corpus: PubMed abstracts on psychological coping strategies for depression,
-anxiety, and stress — specifically CBT, mindfulness-based interventions,
-and behavioral activation. This is an informational/research synthesis tool,
+Corpus: PubMed abstracts plus PubMed Central full text (where openly
+available) on psychological coping strategies for depression, anxiety, and
+stress — specifically CBT, mindfulness-based interventions, and behavioral
+activation. 1,868 papers, 505 (27%) with full text, 20,854 indexed chunks. This is an informational/research synthesis tool,
 not a clinical tool. Every response should carry a disclaimer that it's not
 medical advice.
 
@@ -16,20 +17,25 @@ medical advice.
 - Python 3.11+, FastAPI for the serving layer (SSE streaming enabled)
 - LangGraph for the agent state machine (StateGraph, conditional edges)
 - LangChain for LLM/embedding integrations
-- Chroma for the vector store (local, Docker-friendly)
-- PubMed E-utilities API for data ingestion
-- RAGAS for offline evaluation
+- Pinecone (serverless) for the vector store; the index is ~315MB, too large for the repo
+- PubMed E-utilities + PubMed Central (JATS full text) for data ingestion
+- RAGAS + textstat (readability) for offline evaluation
 - React (Vite) + Tailwind for the frontend, deployed on Vercel
 - Docker + docker-compose for backend deployment
 - pytest for tests
 
 ## Architecture (see docs/architecture.md once written)
 [safety guardrail] -> retrieve -> grade_documents ->
-  [generate | transform_query loop] -> generate -> check_groundedness ->
+  [generate | transform_query loop] ->
+  generate -> simplify -> check_groundedness ->
   [END | generate loop | transform_query loop]
 
-State schema: question, original_question, documents, generation,
-retry_count, grounded
+retrieve over-fetches 40 candidates, caps at 2 chunks per paper, keeps top 12.
+generate produces a technical draft; simplify rewrites it for a general reader
+before check_groundedness verifies the text the reader actually sees.
+
+State schema: question, original_question, documents, draft_generation,
+generation, retry_count, grounded, crisis_detected
 
 ## Safety guardrail
 Before the retrieve node, a lightweight check screens the incoming question
@@ -41,36 +47,37 @@ simple keyword/pattern check for this portfolio project, not a clinical-
 grade system — note this limitation explicitly in the README.
 
 ## Current phase
-Data pipeline, corrective graph, FastAPI backend (with SSE streaming), 
-and the React + Tailwind frontend are all complete — chat interface, 
-live reasoning trace, clickable citations, disclaimer banner, retry 
-badges, and a deliberate visual design pass (not default Tailwind), 
-responsive down to mobile. Frontend consumes /query/stream successfully 
-end to end.
+v2 shipped through Phase 5: PMC full-text ingestion, Pinecone migration,
+per-paper retrieval caps with concurrent grading, two-stage plain-language
+answers with numbered citations, and a three-arm eval with readability metrics.
 
-Remaining work to ship this as a full portfolio project:
-1. RAGAS eval comparing linear vs. corrective graph performance 
-   (faithfulness, answer relevancy, context precision) on a ~15-question 
-   eval set
-2. Docker + docker-compose for the backend (FastAPI + persisted Chroma 
-   volume)
-3. Deploy: backend to Render/Fly.io, frontend to Vercel
-4. GitHub Actions CI: lint + a smoke test hitting the compiled graph
-5. README: architecture diagram, eval numbers table, demo 
-   screen-recording of the reasoning trace in action, setup instructions
+Known open items:
+1. Frontend pass - [1] markers render as plain text, not links to the source list
+2. Eval set is n=14; run-to-run variance on LLM-judged metrics is as large as
+   the effects being measured (see README)
+3. Corpus capped at ~1,986 papers by the MeSH query; 27% full-text coverage
 
 ## Decisions log
-- Embedding model: [fill in]
-- Chunk strategy: one Document per abstract, page_content = title + 
-  abstract, metadata = {pmid, title, journal, year}
+- Embedding model: text-embedding-3-small (1536 dims; `dimensions` is
+  configurable for Matryoshka truncation if index size ever matters)
+- Chunk strategy: section-aware, 1200 chars / 150 overlap. Abstract is always
+  its own chunk; full-text sections are split separately and prefixed with
+  their section label. metadata = {pmid, title, journal, year, section,
+  has_full_text, chunk_index}
+- Section filtering: denylist (drop Introduction/Background/ethics/funding/
+  acknowledgements/references), not an allowlist - real section titles vary
+  far more than IMRaD
 - PubMed query: (
     '("Adaptation, Psychological"[MeSH] OR "coping"[tiab]) '
     'AND ("Depression"[MeSH] OR "Anxiety"[MeSH] OR "stress, psychological"[MeSH]) '
     'AND ("Cognitive Behavioral Therapy"[MeSH] OR "Mindfulness"[MeSH] OR "self-care"[tiab])'
 )
 - Retry limit: 2 retries max before fallback response
-- FastAPI response shape: {answer, citations, disclaimer, retries_used}
+- FastAPI response shape: {answer, citations, disclaimer, retries_used};
+  citations carry number + url, filtered to those the answer actually cites
 - Streaming: SSE, events per LangGraph node transition
+- Plain-language glosses are kept even though they lower measured
+  faithfulness - deliberate product decision, documented in the README
 - Frontend: React + Vite + Tailwind, deployed on Vercel
 
 ## Conventions

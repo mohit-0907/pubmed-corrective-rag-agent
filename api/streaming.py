@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator
 
+from agent.citations import cited_sources, number_sources
 from agent.nodes import DISCLAIMER, DISCLAIMER_TEXT
 
 
@@ -56,15 +57,7 @@ def _build_done_payload(state: dict) -> dict:
     generation = state.get("generation", "")
     answer = generation.replace(DISCLAIMER, "").rstrip()
 
-    citations = [
-        {
-            "pmid": doc.metadata["pmid"],
-            "title": doc.metadata["title"],
-            "journal": doc.metadata["journal"],
-            "year": doc.metadata["year"],
-        }
-        for doc in state.get("documents", [])
-    ]
+    citations = cited_sources(number_sources(state.get("documents", [])), answer)
 
     return {
         "answer": answer,

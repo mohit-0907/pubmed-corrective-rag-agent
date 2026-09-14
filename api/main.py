@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
+from agent.citations import cited_sources, number_sources
 from agent.graph import build_graph
 from api.schemas import QueryRequest, QueryResponse, Source
 from api.streaming import stream_graph_events
@@ -61,14 +62,13 @@ def query(request: QueryRequest) -> QueryResponse:
         }
     )
 
+    # Numbered by the same helper the prompt uses, so [1] in the answer text
+    # and sources[0] here always refer to the same paper.
     sources = [
-        Source(
-            pmid=doc.metadata["pmid"],
-            title=doc.metadata["title"],
-            journal=doc.metadata["journal"],
-            year=doc.metadata["year"],
+        Source(**source)
+        for source in cited_sources(
+            number_sources(result.get("documents", [])), result["generation"]
         )
-        for doc in result.get("documents", [])
     ]
 
     return QueryResponse(

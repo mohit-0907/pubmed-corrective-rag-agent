@@ -4,3 +4,4 @@
 # custom config, so an unpinned upgrade could silently start failing CI.
 ruff==0.16.3
 pytest>=8.0
+textstat>=0.7

@@ -125,10 +125,42 @@ def _query_rewrite_chain():
     return prompt | _grader_llm()
 
 
-def grade_document_relevance(document: str, question: str) -> bool:
-    """True if the document excerpt is relevant to the question."""
-    result = _document_grader_chain().invoke({"document": document, "question": question})
-    return result.binary_score == "yes"
+GRADER_MAX_CONCURRENCY = 8
+
+
+def grade_documents_relevance(
+    documents: list[str],
+    question: str,
+    max_concurrency: int = GRADER_MAX_CONCURRENCY,
+) -> list[bool]:
+    """Grades many excerpts against one question, concurrently.
+
+    Batched rather than looped because this is the single largest cost in a
+    turn: one LLM call per retrieved chunk, run back to back. Sequentially
+    that scales linearly with top-k, which is what made raising top-k
+    unaffordable before.
+
+    Failures degrade to "relevant" rather than aborting the turn - wrongly
+    keeping a chunk costs some context budget, wrongly dropping every chunk
+    sends the graph into a pointless retry loop.
+    """
+    if not documents:
+        return []
+
+    results = _document_grader_chain().batch(
+        [{"document": document, "question": question} for document in documents],
+        config={"max_concurrency": max_concurrency},
+        return_exceptions=True,
+    )
+
+    grades: list[bool] = []
+    for result in results:
+        if isinstance(result, Exception):
+            print(f"[graders] relevance grading failed, keeping chunk: {result}")
+            grades.append(True)
+        else:
+            grades.append(result.binary_score == "yes")
+    return grades
 
 
 def grade_hallucination(documents: str, generation: str) -> bool:

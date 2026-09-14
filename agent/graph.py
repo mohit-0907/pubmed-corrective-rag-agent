@@ -1,7 +1,7 @@
 """Assembles the LangGraph state machine.
 
   [safety guardrail] -> retrieve -> grade_documents -> [generate | transform_query loop]
-  -> generate -> check_groundedness -> [END | generate loop | transform_query loop]
+  -> generate -> simplify -> check_groundedness -> [END | generate loop | transform_query loop]
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from agent.nodes import (
     grade_documents,
     retrieve,
     safety_check,
+    simplify,
     transform_query,
 )
 from agent.routing import (
@@ -34,6 +35,7 @@ def build_graph():
     workflow.add_node("grade_documents", grade_documents)
     workflow.add_node("transform_query", transform_query)
     workflow.add_node("generate", generate)
+    workflow.add_node("simplify", simplify)
     workflow.add_node("check_groundedness", check_groundedness)
     workflow.add_node("flag_ungrounded", flag_ungrounded)
 
@@ -50,7 +52,8 @@ def build_graph():
         {"generate": "generate", "transform_query": "transform_query"},
     )
     workflow.add_edge("transform_query", "retrieve")
-    workflow.add_edge("generate", "check_groundedness")
+    workflow.add_edge("generate", "simplify")
+    workflow.add_edge("simplify", "check_groundedness")
     workflow.add_conditional_edges(
         "check_groundedness",
         route_after_groundedness_check,

@@ -10,10 +10,12 @@ class QueryRequest(BaseModel):
 
 
 class Source(BaseModel):
+    number: int  # matches the [1]-style markers in the answer text
     pmid: str
     title: str
     journal: str
     year: str
+    url: str
 
 
 class QueryResponse(BaseModel):

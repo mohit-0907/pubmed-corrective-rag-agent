@@ -8,10 +8,10 @@ flow don't crash), not answer quality - that's what eval/run_eval.py is
 for, deliberately not run on every push.
 
 Patch targets matter here: nodes.py and routing.py do
-`from agent.graders import grade_document_relevance, ...`, which binds
+`from agent.graders import grade_documents_relevance, ...`, which binds
 those names into *their own* module namespaces. Patching
-agent.graders.grade_document_relevance would not affect what nodes.py
-actually calls - the patch has to target agent.nodes.grade_document_relevance
+agent.graders.grade_documents_relevance would not affect what nodes.py
+actually calls - the patch has to target agent.nodes.grade_documents_relevance
 (and agent.routing.grade_answer) instead.
 """
 
@@ -48,17 +48,32 @@ class _FakeLLMResponse:
         self.content = content
 
 
+DRAFT_TEXT = (
+    "Mindfulness-based stress reduction produced a statistically significant "
+    "reduction in anxiety symptomatology (d = 0.62) [1]."
+)
+SIMPLIFIED_TEXT = (
+    "Mindfulness-based stress reduction lowered anxiety by a moderate amount [1]."
+)
+
+
 class _FakeGenerationLLM:
     def invoke(self, messages) -> _FakeLLMResponse:
-        return _FakeLLMResponse(
-            "Mindfulness-based stress reduction is effective for anxiety (PMID: 12345678)."
-        )
+        return _FakeLLMResponse(DRAFT_TEXT)
+
+
+class _FakeSimplifyLLM:
+    def invoke(self, messages) -> _FakeLLMResponse:
+        return _FakeLLMResponse(SIMPLIFIED_TEXT)
 
 
 def test_corrective_graph_runs_end_to_end(monkeypatch):
     monkeypatch.setattr(nodes, "_load_vector_store", lambda: _FakeVectorStore())
     monkeypatch.setattr(nodes, "_generation_llm", lambda: _FakeGenerationLLM())
-    monkeypatch.setattr(nodes, "grade_document_relevance", lambda document, question: True)
+    monkeypatch.setattr(nodes, "_simplify_llm", lambda: _FakeSimplifyLLM())
+    monkeypatch.setattr(
+        nodes, "grade_documents_relevance", lambda documents, question: [True] * len(documents)
+    )
     monkeypatch.setattr(nodes, "grade_hallucination", lambda documents, generation: True)
     monkeypatch.setattr(routing, "grade_answer", lambda question, generation: True)
 
@@ -71,8 +86,12 @@ def test_corrective_graph_runs_end_to_end(monkeypatch):
         }
     )
 
-    assert result["generation"]
-    assert "12345678" in result["generation"]
+    # Both stages ran, and the text the reader gets is the simplified one -
+    # not the technical draft the groundedness check would otherwise verify.
+    assert result["draft_generation"] == DRAFT_TEXT
+    assert SIMPLIFIED_TEXT in result["generation"]
+    assert "symptomatology" not in result["generation"]
+    assert "[1]" in result["generation"]
     assert result["crisis_detected"] is False
     assert len(result["documents"]) == 1
 
@@ -83,6 +102,7 @@ def test_safety_guardrail_bypasses_graph_for_crisis_question(monkeypatch):
     # unmocked graders on a nonsense document set.
     monkeypatch.setattr(nodes, "_load_vector_store", lambda: _FakeVectorStore())
     monkeypatch.setattr(nodes, "_generation_llm", lambda: _FakeGenerationLLM())
+    monkeypatch.setattr(nodes, "_simplify_llm", lambda: _FakeSimplifyLLM())
 
     question = "I feel like I want to end my life, what should I do?"
     graph = build_graph()

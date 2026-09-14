@@ -11,7 +11,8 @@ class GraphState(TypedDict):
     question: str
     original_question: str
     documents: list[Document]
-    generation: str
+    draft_generation: str  # technical synthesis, before plain-language rewrite
+    generation: str        # what the reader actually sees
     retry_count: int
     grounded: bool
     crisis_detected: bool
